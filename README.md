@@ -33,7 +33,7 @@ There are two ways to run PyBot:
 3. Run it:
 
 ```bash
-python PyBot.py
+python main.py
 ```
 
 >On first startup, the bot will automatically:
@@ -62,6 +62,9 @@ python main.py
 > breaking the bot or breaking your features in bot updates
 > 
 > This also gives the dev build rather than a release version
+
+
+This project is licensed under the Apache License 2.0 — see the [LICENSE](./LICENSE) file for details.
 
 Copyright 2025 DEAMJAVA
 
