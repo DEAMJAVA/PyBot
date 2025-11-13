@@ -4,6 +4,8 @@ plugins_folder = 'plugins'
 creator_id = '938059286054072371'
 api = 'https://pybotapi.javanodes.in'
 
+#test
+
 libraries = """
 aiohappyeyeballs==2.6.1
 aiohttp==3.12.14
