@@ -1,4 +1,4 @@
-# PyBOt
+# PyBot
 
 A Discord bot built in Python, designed to be easily extended with commands, events, and plugins for your server.
 
@@ -26,8 +26,8 @@ Clone the repository and start the bot:
 
 ```bash
 # Clone the repository
-git clone https://github.com/DEAMAJVA/PyBOt.git
-cd PyBOt
+git clone https://github.com/DEAMAJVA/PyBot.git
+cd PyBot
 
 # Start the bot
 python main.py
