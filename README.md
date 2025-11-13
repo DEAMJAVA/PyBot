@@ -28,7 +28,7 @@ There are two ways to run PyBot:
 
 #### 1️⃣ Download the release (recommended)
 
-1. Go to the [Releases](https://github.com/DEAMAJVA/PyBot/releases) page  
+1. Go to the [Releases](https://github.com/DEAMJAVA/PyBot/releases) page  
 2. Download the main `main.py` file  
 3. Run it:
 
