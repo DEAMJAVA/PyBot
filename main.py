@@ -1,8 +1,8 @@
-current_version = 'V19.0-dev-0.0'
+current_version = 'V1.0-dev-0.0'
 current_config_format = 20
 plugins_folder = 'plugins'
 creator_id = '938059286054072371'
-api = 'https://api.cane.javanodes.in'
+api = 'https://pybotapi.javanodes.in'
 
 libraries = """
 aiohappyeyeballs==2.6.1
