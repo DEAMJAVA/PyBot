@@ -1,8 +1,8 @@
-current_version = 'V1.0-dev-0.0'
+current_version = 'V1.0-dev-0.1'
 current_config_format = 20
 plugins_folder = 'plugins'
 creator_id = '938059286054072371'
-api = 'https://pybotapi.javanodes.in'
+api = 'http://127.0.0.1:25519'
 
 #test
 
@@ -10,7 +10,7 @@ libraries = """
 aiohappyeyeballs==2.6.1
 aiohttp==3.12.14
 aiosignal==1.4.0
-anyio==4.9.0
+anyio==4.9.0    
 asyncio-dgram==2.2.0
 attrs==25.3.0
 audioop-lts==0.2.1
@@ -67,6 +67,7 @@ typing_extensions==4.14.1
 urllib3==2.5.0
 Werkzeug==3.1.3
 yarl==1.20.1
+tqdm
 yt-dlp
 """
 
@@ -94,6 +95,7 @@ try:
     import numpy as np
     import string
     import threading
+    from tqdm import tqdm
     import matplotlib.patheffects as pe
     import matplotlib.ticker as ticker
     import deamstools
@@ -438,25 +440,45 @@ os_name = platform.system()
 if os_name == "Windows":
     FFMPEG_PATH = FFMPEG_PATH + '.exe'
 
-if not os.path.exists(FFMPEG_PATH) and not os.path.exists(FFMPEG_PATH + '.exe'):
-    logw('FFMPEG not found, downloading from API server')
-    architecture = get_architecture()
 
-    if os_name == "Windows":
-        response = requests.get(f'{api}/get-ffmpeg/win')
-        with open('ffmpeg.exe', 'wb') as f:
-            f.write(response.content)
-            log('Downloaded FFMPEG for Windows')
+def check_ffmpeg():
+    if not os.path.exists(FFMPEG_PATH):
+        logw('FFMPEG not found, downloading from API server')
+        architecture = get_architecture()
 
-    elif os_name == "Linux":
-        response = requests.get(f'{api}/get-ffmpeg/linux-{architecture}')
-        with open('ffmpeg', 'wb') as f:
-            f.write(response.content)
-            log('Downloaded FFMPEG for Linux')
-        os.chmod('ffmpeg', 0o755)
+        if os_name == "Windows":
+            url = f'{api}/get-ffmpeg/win'
+            file_name = 'ffmpeg.exe'
 
-    else:
-        logw(f"This script is running on an unknown operating system: {os_name} couldn't download FFMPEG")
+        elif os_name == "Linux":
+            url = f'{api}/get-ffmpeg/linux-{architecture}'
+            file_name = 'ffmpeg'
+
+        else:
+            logw(f"This script is running on an unknown operating system: {os_name} couldn't download FFMPEG")
+
+
+
+        response = requests.get(url, stream=True)
+        total_size = int(response.headers.get('content-length', 0))
+        block_size = 1024
+
+        with open(file_name, 'wb') as f, tqdm(
+            total=total_size,
+            unit='B',
+            unit_scale=True,
+            desc=f"Downloading {file_name}"
+        ) as bar:
+            for data in response.iter_content(block_size):
+                f.write(data)
+                bar.update(len(data))
+
+        if os_name == "Linux":
+            os.chmod(file_name, 0o755)
+
+        log(f"Downloaded FFMPEG for {os_name}")
+check_ffmpeg()
+
 
 vcinuse_flags = defaultdict(lambda: False)
 
@@ -1189,7 +1211,7 @@ def has_owner_perm_check(ctx):
 
 def is_owner_check(ctx):
     user_id = ctx.author.id
-    guild_id = ctx.guild.id
+    guild_id = ctx.guild.id if ctx.guild else 0
     owner_id = bot_config['owner_id']
     if is_user_bypassed(user_id, guild_id):
         return True
@@ -1267,7 +1289,7 @@ def has_owner_perm():
 def is_owner():
     async def predicate(ctx):
         user_id = ctx.author.id
-        guild_id = ctx.guild.id
+        guild_id = ctx.guild.id if ctx.guild else 0
         owner_id = bot_config['owner_id']
         if is_user_bypassed(user_id, guild_id):
             return True
@@ -3021,7 +3043,7 @@ async def setup_ticket_system(
 
     button_style = button_color_map.get(button_color.lower(), discord.ButtonStyle.primary)
 
-    guild_id = ctx.guild.id
+    guild_id = ctx.guild.id if ctx.guild else 0
     view = CreateTicketView(ctx.bot, button_message=button_message, emoji=emoji, button_style=button_style,
                             profile=profile, guild_id=guild_id)
 
@@ -5455,7 +5477,7 @@ add_help('Utils', 'reactionrole <emoji> <role mention> <message link or message 
 @bot.command()
 @has_required_perm()
 async def lockdown(ctx):
-    guild_id = ctx.guild.id
+    guild_id = ctx.guild.id if ctx.guild else 0
     if guild_id not in server_configs:
         server_configs[guild_id] = {'unlocked_state': {}}
 
@@ -5478,7 +5500,7 @@ add_help('Moderation', 'lockdown', 'Performs a serverwide lockdown locking all c
 @bot.command()
 @commands.has_permissions(manage_channels=True)
 async def unlockdown(ctx):
-    guild_id = ctx.guild.id
+    guild_id = ctx.guild.id if ctx.guild else 0
     if guild_id in server_configs and 'unlocked_state' in server_configs[guild_id]:
         for channel in ctx.guild.channels:
             if channel.id in server_configs[guild_id]['unlocked_state']:
