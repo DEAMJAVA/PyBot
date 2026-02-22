@@ -1,5 +1,5 @@
-current_version = 'V1.0-dev-0.1'
-current_config_format = 20
+current_version = 'V1.0-dev-1.0'
+current_config_format = 21
 plugins_folder = 'plugins'
 creator_id = '938059286054072371'
 api = 'http://127.0.0.1:25519'
@@ -147,6 +147,7 @@ DEFAULT_CONFIG = {
     'plugins': False,
     'debug': False,
     'log': False,
+    'api_override': '0'
 }
 
 if not os.path.isfile('BotConfig.json'):
@@ -184,6 +185,9 @@ with open('BotConfig.json') as f:
     bot_config = json.load(f)
 
 DEBUG_MODE = bot_config.get('debug', False)
+
+API_OVERRIDE = bot_config.get('api_override', '0')
+if API_OVERRIDE != '0': api = API_OVERRIDE
 
 
 def update_config(user_config, config_path='BotConfig.json', default=DEFAULT_CONFIG, remove_old_keys=True):
