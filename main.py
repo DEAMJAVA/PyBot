@@ -1,29 +1,28 @@
-current_version = 'V1.0-dev-1.0'
+current_version = 'V1.1-dev-0.0'
 current_config_format = 21
 plugins_folder = 'plugins'
 creator_id = '938059286054072371'
 api = 'http://127.0.0.1:25519'
 
-#test
-
 libraries = """
 aiohappyeyeballs==2.6.1
 aiohttp==3.13.3
 aiosignal==1.4.0
-anyio==4.12.1
+anyio==4.13.0
 asyncio-dgram==3.0.0
-attrs==25.4.0
+attrs==26.1.0
+audioop-lts==0.2.2
 blinker==1.9.0
-certifi==2026.1.4
+certifi==2026.2.25
 cffi==2.0.0
-charset-normalizer==3.4.4
+charset-normalizer==3.4.6
 click==8.1.8
 contourpy==1.3.3
 cycler==0.12.1
 deamstools==1.3.0
 dnspython==2.8.0
 Flask==3.1.3
-fonttools==4.61.1
+fonttools==4.62.1
 frozenlist==1.8.0
 googletrans==4.0.2
 greenlet==3.3.2
@@ -37,34 +36,34 @@ hyperframe==6.1.0
 idna==3.11
 itsdangerous==2.2.0
 Jinja2==3.1.6
-kiwisolver==1.4.9
+kiwisolver==1.5.0
 MarkupSafe==3.0.3
 matplotlib==3.10.8
-mcstatus==12.2.1
+mcstatus==13.0.0
 mpmath==1.3.0
 multidict==6.7.1
-numpy==2.4.2
+numpy==2.4.3
 packaging==26.0
 pillow==12.1.1
 propcache==0.4.1
-py-cord==2.7.1
+py-cord==2.6.1
 pycparser==3.0
 PyMySQL==1.1.2
-pymysqlhelper==1.10.1
-PyNaCl==1.6.2
+pymysqlhelper==1.11.0
+PyNaCl==1.5.0
 pyparsing==3.3.2
 python-dateutil==2.9.0.post0
-pytz==2025.2
+pytz==2026.1.post1
 requests==2.32.5
 six==1.17.0
-SQLAlchemy==2.0.46
+SQLAlchemy==2.0.48
 sympy==1.14.0
 tqdm==4.67.3
 typing_extensions==4.15.0
 urllib3==2.6.3
-Werkzeug==3.1.6
-yarl==1.22.0
-yt-dlp==2026.2.21
+Werkzeug==3.1.7
+yarl==1.23.0
+yt-dlp
 """
 
 try:
@@ -7443,7 +7442,6 @@ if __name__ == '__main__' and bot_config['plugins']:
                         line for line in lines if not line.strip().startswith('from main import')
                     )
 
-                    # Create a shared but isolated namespace using a copy of globals
                     plugin_namespace = globals().copy()
                     plugin_namespace.update({
                         '__name__': plugin_name,
@@ -7452,8 +7450,6 @@ if __name__ == '__main__' and bot_config['plugins']:
                     })
 
                     exec(compile(filtered_code, plugin_path, 'exec'), plugin_namespace)
-
-                    # Store the plugin's namespace in plugin_
                     plugin_[plugin_name] = plugin_namespace
 
                     log(f'Successfully loaded plugin: {plugin_file}')
@@ -7708,15 +7704,19 @@ async def countdown(retry_after):
 
 def run_bot():
     create_restart_script()
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
     while not is_exiting:
         try:
-            bot.loop.run_until_complete(bot.start(bot_config['bot_token']))
+            loop.run_until_complete(bot.start(bot_config['bot_token']))
             logger.info('Bot Closed!')
         except discord.HTTPException as e:
             if e.status == 429:
                 retry_after = float(e.response.headers.get('Retry-After', 5))
                 logger.warning(f'Rate limited! Waiting for {retry_after} seconds...')
-                asyncio.run(countdown(retry_after))
+                loop.run_until_complete(countdown(retry_after))
             else:
                 logger.error(f'An error occurred: {e}')
         except Exception as e:

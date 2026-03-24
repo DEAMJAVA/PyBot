@@ -2,6 +2,8 @@
 
 A Discord bot built in Python, designed to be easily extended with commands, events, and plugins for your server.
 
+>Requires Python 3.12/13
+
 ## 🚀 Features
 
 - Fully automated setup: dependencies and configuration handled on first startup  
