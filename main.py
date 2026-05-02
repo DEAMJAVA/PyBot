@@ -7705,20 +7705,20 @@ async def countdown(retry_after):
 def run_bot():
     create_restart_script()
 
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-
     while not is_exiting:
         try:
-            loop.run_until_complete(bot.start(bot_config['bot_token']))
+            bot.run(bot_config['bot_token'])
             logger.info('Bot Closed!')
         except discord.HTTPException as e:
             if e.status == 429:
                 retry_after = float(e.response.headers.get('Retry-After', 5))
                 logger.warning(f'Rate limited! Waiting for {retry_after} seconds...')
-                loop.run_until_complete(countdown(retry_after))
+                time.sleep(retry_after)
             else:
                 logger.error(f'An error occurred: {e}')
+                break
+        except SystemExit:
+            break
         except Exception as e:
             logger.error(f'An unexpected error occurred: {e}')
             break
