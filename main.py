@@ -502,7 +502,6 @@ def check_ffmpeg():
     except requests.exceptions.RequestException as e:
         logw(f"Failed to download FFMPEG: {e}")
 
-        # Remove partially downloaded file if it exists
         if os.path.exists(file_name):
             try:
                 os.remove(file_name)
