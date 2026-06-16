@@ -1,0 +1,22 @@
+BotConfig.json
+changelog.txt
+dares.txt
+ffmpeg
+libraries.txt
+MusicConfig.ini
+network_status.json
+oauth.db
+push.py
+requirements.txt
+responses.json
+restart_script.py
+server_configs.json
+server_status.json
+test.py
+ticket_numbers.json
+truths.txt
+users.db
+plugins/scripts.txt
+Logs
+Bot Logs
+backups
