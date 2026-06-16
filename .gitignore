@@ -21,3 +21,9 @@ Logs
 Bot Logs
 backups
 .idea
+templates
+plugins/AI
+plugins/credits
+plugins/oauth
+plugins/pterodactyl
+plugins/TicketTranscripts
