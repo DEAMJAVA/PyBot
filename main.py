@@ -454,24 +454,31 @@ if os_name == "Windows":
 
 
 def check_ffmpeg():
-    if not os.path.exists(FFMPEG_PATH):
-        logw('FFMPEG not found, downloading from API server')
-        architecture = get_architecture()
+    if os.path.exists(FFMPEG_PATH):
+        return True
 
-        if os_name == "Windows":
-            url = f'{api}/get-ffmpeg/win'
-            file_name = 'ffmpeg.exe'
+    logw('FFMPEG not found, downloading from API server')
+    architecture = get_architecture()
 
-        elif os_name == "Linux":
-            url = f'{api}/get-ffmpeg/linux-{architecture}'
-            file_name = 'ffmpeg'
+    if os_name == "Windows":
+        url = f'{api}/get-ffmpeg/win'
+        file_name = 'ffmpeg.exe'
 
-        else:
-            logw(f"This script is running on an unknown operating system: {os_name} couldn't download FFMPEG")
+    elif os_name == "Linux":
+        url = f'{api}/get-ffmpeg/linux-{architecture}'
+        file_name = 'ffmpeg'
 
+    else:
+        logw(
+            f"Unknown operating system: {os_name}. "
+            "Cannot download FFMPEG automatically."
+        )
+        return False
 
+    try:
+        response = requests.get(url, stream=True, timeout=30)
+        response.raise_for_status()
 
-        response = requests.get(url, stream=True)
         total_size = int(response.headers.get('content-length', 0))
         block_size = 1024
 
@@ -482,13 +489,27 @@ def check_ffmpeg():
             desc=f"Downloading {file_name}"
         ) as bar:
             for data in response.iter_content(block_size):
-                f.write(data)
-                bar.update(len(data))
+                if data:
+                    f.write(data)
+                    bar.update(len(data))
 
         if os_name == "Linux":
             os.chmod(file_name, 0o755)
 
         log(f"Downloaded FFMPEG for {os_name}")
+        return True
+
+    except requests.exceptions.RequestException as e:
+        logw(f"Failed to download FFMPEG: {e}")
+
+        # Remove partially downloaded file if it exists
+        if os.path.exists(file_name):
+            try:
+                os.remove(file_name)
+            except OSError:
+                pass
+
+        return False
 check_ffmpeg()
 
 
