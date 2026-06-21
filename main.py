@@ -46,7 +46,7 @@ numpy==2.4.3
 packaging==26.0
 pillow==12.1.1
 propcache==0.4.1
-py-cord==2.6.1
+py-cord==2.8.0
 pycparser==3.0
 PyMySQL==1.1.2
 pymysqlhelper==1.11.0
