@@ -1,8 +1,8 @@
-current_version = 'V1.3-dev-0.0'
+current_version = 'V1.4-dev-0.0'
 current_config_format = 21
 plugins_folder = 'plugins'
 creator_id = '938059286054072371'
-api = 'http://127.0.0.1:25519'
+api = 'http://195.123.4.133:25052'
 
 libraries = """
 aiohappyeyeballs==2.6.1
