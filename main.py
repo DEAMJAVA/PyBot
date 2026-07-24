@@ -1,4 +1,4 @@
-current_version = 'V1.4-dev-0.0'
+current_version = 'V1.5-dev-0.0'
 current_config_format = 21
 plugins_folder = 'plugins'
 creator_id = '938059286054072371'
@@ -7204,6 +7204,9 @@ async def level_rewards_engine(message):
         return
 
     if message.channel.id in level_config.get('excluded_channels', []):
+        return
+
+    if message.content.startswith(bot.command_prefix):
         return
 
     server_config.setdefault('user_messages', {})
