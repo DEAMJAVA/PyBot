@@ -3076,11 +3076,12 @@ async def setup_ticket_system(
         "blue": discord.ButtonStyle.blurple,
         "red": discord.ButtonStyle.red,
         "green": discord.ButtonStyle.green,
-        "grey": discord.ButtonStyle.grey
+        "grey": discord.ButtonStyle.grey,
+        "gray": discord.ButtonStyle.gray,
     }
 
     channel = ctx.channel
-    if message == 'none':
+    if message.lower() in ["none", "null", "empty"]:
         message = None
     elif message is None:
         message = "Click the button below to create a ticket."
