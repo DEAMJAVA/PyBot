@@ -173,6 +173,7 @@ if not os.path.isfile('BotConfig.json'):
         'plugins': PLUGINS,
         'debug': False,
         'log': INPUT_LOG,
+        'api_override': '0'
     }
     with open('BotConfig.json', 'w') as f:
         f.write(json.dumps(bot_config, indent=4, ensure_ascii=False, separators=(',', ': ')) + '\n')
