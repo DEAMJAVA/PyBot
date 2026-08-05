@@ -7,7 +7,6 @@ MusicConfig.ini
 network_status.json
 oauth.db
 push.py
-requirements.txt
 responses.json
 restart_script.py
 server_configs.json
