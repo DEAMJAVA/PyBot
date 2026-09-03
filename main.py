@@ -19,6 +19,7 @@ charset-normalizer==3.4.6
 click==8.1.8
 contourpy==1.3.3
 cycler==0.12.1
+davey==0.1.5
 deamstools==1.3.0
 dnspython==2.8.0
 Flask==3.1.3
@@ -46,11 +47,11 @@ numpy==2.4.3
 packaging==26.0
 pillow==12.1.1
 propcache==0.4.1
-py-cord==2.8.0
+py-cord==2.8.1
 pycparser==3.0
 PyMySQL==1.1.2
-pymysqlhelper==1.11.0
-PyNaCl==1.5.0
+pymysqlhelper==1.12.0
+PyNaCl==1.6.2
 pyparsing==3.3.2
 python-dateutil==2.9.0.post0
 pytz==2026.1.post1
