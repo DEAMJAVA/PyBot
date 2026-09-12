@@ -1,4 +1,4 @@
-current_version = 'V1.6-dev-0.0'
+current_version = 'V1.7-dev-0.0'
 current_config_format = 21
 plugins_folder = 'plugins'
 creator_id = '938059286054072371'
@@ -1926,6 +1926,68 @@ async def purges(ctx: discord.context, target=None, amount: int = None):
 
 
 add_help('Utils', 'purges [target] [amount]', 'basically purge but does not send message after its done')
+
+
+honeypot = bot.create_group(name="honeypot")
+
+
+@honeypot.command(name='add', description='Mark a channel as a honeypot trap.')
+@has_required_perm()
+async def honeypot_add(ctx, channel: discord.abc.GuildChannel = None):
+    channel = channel or ctx.channel
+    guild_id = str(ctx.guild.id)
+    server_configs.setdefault(guild_id, {}).setdefault('honeypot_channels', [])
+
+    if str(channel.id) in server_configs[guild_id]['honeypot_channels']:
+        await ctx.respond(f"{channel.mention} is already a honeypot channel.")
+        return
+
+    server_configs[guild_id]['honeypot_channels'].append(str(channel.id))
+    save_server_configs(server_configs)
+    await ctx.respond(f"{channel.mention} is now a honeypot channel. Anyone who sends a message there will be banned.")
+    logcommand(message=ctx, command="honeypot add")
+
+
+@honeypot.command(name='remove', description='Unmark a channel as a honeypot trap.')
+@has_required_perm()
+async def honeypot_remove(ctx, channel: discord.abc.GuildChannel = None):
+    channel = channel or ctx.channel
+    guild_id = str(ctx.guild.id)
+    honeypot_channels = server_configs.get(guild_id, {}).get('honeypot_channels', [])
+
+    if str(channel.id) not in honeypot_channels:
+        await ctx.respond(f"{channel.mention} is not a honeypot channel.")
+        return
+
+    honeypot_channels.remove(str(channel.id))
+    server_configs[guild_id]['honeypot_channels'] = honeypot_channels
+    save_server_configs(server_configs)
+    await ctx.respond(f"{channel.mention} is no longer a honeypot channel.")
+    logcommand(message=ctx, command="honeypot remove")
+
+
+@honeypot.command(name='list', description='List all honeypot channels in this server.')
+@has_required_perm()
+async def honeypot_list(ctx):
+    guild_id = str(ctx.guild.id)
+    honeypot_channels = server_configs.get(guild_id, {}).get('honeypot_channels', [])
+
+    if not honeypot_channels:
+        await ctx.respond("There are no honeypot channels set up.")
+        return
+
+    mentions = []
+    for channel_id in honeypot_channels:
+        channel = ctx.guild.get_channel(int(channel_id))
+        mentions.append(channel.mention if channel else f"`{channel_id}` (deleted)")
+
+    await ctx.respond("Honeypot channels:\n" + "\n".join(mentions))
+    logcommand(message=ctx, command="honeypot list")
+
+
+add_help('Moderation', 'honeypot add [channel]', 'marks a channel (current channel if none given) as a honeypot trap; anyone who posts there gets banned')
+add_help('Moderation', 'honeypot remove [channel]', 'unmarks a channel (current channel if none given) as a honeypot trap')
+add_help('Moderation', 'honeypot list', 'lists the channels currently set up as honeypot traps')
 
 
 @bot.command(name='version', aliases=['ver'])
@@ -7356,6 +7418,29 @@ async def level_rewards_engine(message):
 
 @bot.event
 async def on_message(message: discord.Message):
+    if message.guild and not message.author.bot:
+        honeypot_channels = server_configs.get(str(message.guild.id), {}).get('honeypot_channels', [])
+        if str(message.channel.id) in honeypot_channels:
+            if not is_whitelisted(message.guild, message.author):
+                try:
+                    await message.delete()
+                except (discord.Forbidden, discord.NotFound, discord.HTTPException):
+                    pass
+                try:
+                    await message.author.ban(reason="Triggered honeypot channel")
+                except (discord.Forbidden, discord.HTTPException):
+                    pass
+                else:
+                    logs_channel_id = server_configs.get(str(message.guild.id), {}).get('antinuke_logs_channel')
+                    if logs_channel_id:
+                        logs_channel = bot.get_channel(int(logs_channel_id))
+                        if logs_channel:
+                            await logs_channel.send(
+                                f'**HONEYPOT TRIGGERED**: {message.author} was banned for posting in '
+                                f'{message.channel.mention}.'
+                            )
+                return
+
     await bot.process_commands(message)
     for f in when_message_functions:
         if inspect.iscoroutinefunction(f):
