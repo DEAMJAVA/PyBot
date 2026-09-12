@@ -1,8 +1,8 @@
-current_version = 'V1.5-dev-0.0'
+current_version = 'V1.6-dev-0.0'
 current_config_format = 21
 plugins_folder = 'plugins'
 creator_id = '938059286054072371'
-api = 'http://195.123.4.133:25052'
+api = 'http://127.0.0.1:25519'
 
 libraries = """
 aiohappyeyeballs==2.6.1
@@ -1706,6 +1706,15 @@ async def rolecolor(ctx, role: discord.Role, color_code: str):
 
 
 
+async def resolve_target_user(ctx, target):
+    try:
+        return await commands.MemberConverter().convert(ctx, target)
+    except commands.BadArgument:
+        try:
+            return await commands.UserConverter().convert(ctx, target)
+        except commands.BadArgument:
+            return None
+
 @bot.command(name='clear', aliases=['nuke'])
 @has_required_perm()
 async def clear(ctx, target=None, amount: int = None):
@@ -1736,12 +1745,11 @@ async def clear(ctx, target=None, amount: int = None):
     elif target in ["users", "user"]:
         deleted = await limited_purge(lambda msg: not msg.author.bot)
     elif target:
-        try:
-            member = await commands.MemberConverter().convert(ctx, target)
-            deleted = await limited_purge(lambda msg: msg.author == member)
-        except commands.BadArgument:
+        member = await resolve_target_user(ctx, target)
+        if member is None:
             await ctx.send("User not found.")
             return
+        deleted = await limited_purge(lambda msg: msg.author.id == member.id)
     else:
         deleted = await ctx.channel.purge(limit=amount, check=check_message_pin)
     response = f'Cleared {len(deleted)} messages. {f'By {target if target else None}' if target else ''}'
@@ -1783,14 +1791,17 @@ async def clear(ctx: discord.context, target=None, amount: int = None):
     elif target in ["users", "user"]:
         deleted = await limited_purge(lambda msg: not msg.author.bot)
 
-    elif target:
-        try:
-            member = await commands.MemberConverter().convert(ctx, target)
 
-            deleted = await limited_purge(lambda msg: msg.author == member)
-        except commands.BadArgument:
-            await ctx.send("User not found.", delete_after=5)
+    elif target:
+
+        member = await resolve_target_user(ctx, target)
+
+        if member is None:
+            await ctx.send("User not found.", delete_after=5)  # or delete_after=5 in `clears`
+
             return
+
+        deleted = await limited_purge(lambda msg: msg.author.id == member.id)
 
     else:
         deleted = await ctx.channel.purge(limit=amount, check=check_message_pin)
@@ -1799,6 +1810,122 @@ async def clear(ctx: discord.context, target=None, amount: int = None):
 
 
 add_help('Utils', 'clears [target] [amount]', 'basically clear but does not send message after its done')
+
+
+async def _resolve_purge_target(ctx, target):
+    """Returns (target_id, error) — error is a string to send if resolution failed."""
+    if target and target not in ["bots", "bot", "users", "user"]:
+        member = await resolve_target_user(ctx, target)
+        if member is None:
+            return None, "User not found."
+        return member.id, None
+    return None, None
+
+
+async def _channel_purge(channel, target, target_id, amount):
+    def check_message_pin(msg):
+        return not msg.pinned
+
+    async def limited_purge(check):
+        deleted = []
+        async for msg in channel.history(limit=1000):
+            if len(deleted) >= amount:
+                break
+            if check(msg) and not msg.pinned:
+                try:
+                    await msg.delete()
+                    deleted.append(msg)
+                except (discord.Forbidden, discord.NotFound, discord.HTTPException):
+                    continue
+        return deleted
+
+    try:
+        if target in ["bots", "bot"]:
+            return await limited_purge(lambda msg: msg.author.bot)
+        elif target in ["users", "user"]:
+            return await limited_purge(lambda msg: not msg.author.bot)
+        elif target_id:
+            return await limited_purge(lambda msg: msg.author.id == target_id)
+        else:
+            return await channel.purge(limit=amount, check=check_message_pin)
+    except (discord.Forbidden, discord.HTTPException):
+        return []
+
+
+@bot.command(name='purge', aliases=['nukeall'])
+@has_required_perm()
+async def purge(ctx, target=None, amount: int = None):
+    await ctx.message.delete()
+
+    if target and target.isdigit():
+        amount = int(target)
+        target = None
+
+    if amount is None:
+        amount = float('inf')
+
+    target_id, error = await _resolve_purge_target(ctx, target)
+    if error:
+        await ctx.send(error)
+        return
+
+    total_deleted = 0
+    channels_cleared = 0
+    channels = list(ctx.guild.text_channels) + list(ctx.guild.voice_channels)
+
+    for channel in channels:
+        perms = channel.permissions_for(ctx.guild.me)
+        if not perms.manage_messages or not perms.read_message_history:
+            continue
+
+        deleted = await _channel_purge(channel, target, target_id, amount)
+        total_deleted += len(deleted)
+        if deleted:
+            channels_cleared += 1
+
+    response = f'Cleared {total_deleted} messages across {channels_cleared} channels.' + (f' By {target}' if target else '')
+    await ctx.send(response)
+
+
+add_help('Utils', 'purge [target] [amount]',
+         'clears the whole server (every text and voice chat). amount is applied per channel. clears messages by specific user if target is provided')
+
+
+@bot.command(name='purges', aliases=['nukesall'])
+@has_required_perm()
+async def purges(ctx: discord.context, target=None, amount: int = None):
+    await ctx.message.delete()
+
+    if target and target.isdigit():
+        amount = int(target)
+        target = None
+
+    if amount is None:
+        amount = float('inf')
+
+    target_id, error = await _resolve_purge_target(ctx, target)
+    if error:
+        await ctx.send(error, delete_after=5)
+        return
+
+    total_deleted = 0
+    channels_cleared = 0
+    channels = list(ctx.guild.text_channels) + list(ctx.guild.voice_channels)
+
+    for channel in channels:
+        perms = channel.permissions_for(ctx.guild.me)
+        if not perms.manage_messages or not perms.read_message_history:
+            continue
+
+        deleted = await _channel_purge(channel, target, target_id, amount)
+        total_deleted += len(deleted)
+        if deleted:
+            channels_cleared += 1
+
+    log(f'Silent Deleted {total_deleted} messages across {channels_cleared} channels in guild {ctx.guild.name} | Target: {target if target else "All"} | By {ctx.author.name}')
+
+
+add_help('Utils', 'purges [target] [amount]', 'basically purge but does not send message after its done')
 
 
 @bot.command(name='version', aliases=['ver'])
