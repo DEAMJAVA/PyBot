@@ -1,5 +1,5 @@
 current_version = 'V1.7-dev-0.0'
-current_config_format = 21
+current_config_format = 22
 plugins_folder = 'plugins'
 creator_id = '938059286054072371'
 api = 'http://127.0.0.1:25519'
@@ -141,6 +141,7 @@ DEFAULT_CONFIG = {
     'bot_group_name': 'Cane',
     'check_for_updates': True,
     'timediff': 0,
+    'default_status': 'online',
     'plugins': False,
     'debug': False,
     'log': False,
@@ -171,6 +172,7 @@ if not os.path.isfile('BotConfig.json'):
         'bot_group_name': INPUT_BOT_GROUP_NAME,
         'check_for_updates': True,
         'timediff': INPUT_TIME_DIFF,
+        'default_status': 'online',
         'plugins': PLUGINS,
         'debug': False,
         'log': INPUT_LOG,
@@ -7735,6 +7737,7 @@ async def on_ready():
     for guild in bot.guilds:
         bot.cached_invites[guild.id] = await guild.invites()
 
+
     for button_config in button_configurations:
         button_views[button_config['custom_id']] = create_button_view(
             label=button_config['label'],
@@ -7769,6 +7772,25 @@ async def on_ready():
         client_id = bot.user.id
         logw(
             f'Bot not in any servers \nOAuth link: https://discord.com/oauth2/authorize?client_id={client_id}&permissions=8&scope=bot')
+
+    status_mappings = {
+        "online": discord.Status.online,
+        "idle": discord.Status.idle,
+        "dnd": discord.Status.dnd,
+        "invisible": discord.Status.invisible,
+    }
+
+    configured_status = bot_config.get("default_status", "online")
+    status = status_mappings.get(configured_status, discord.Status.online)
+
+    log(f"Configured startup status: {configured_status!r}")
+
+    await bot.change_presence(
+        status=status,
+        activity=bot.activity
+    )
+
+    log(f"Startup presence update sent: {status}")
 
     log('Starting Post Startup Setup')
     for guild in bot.guilds:
